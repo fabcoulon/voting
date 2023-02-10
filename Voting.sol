@@ -30,19 +30,6 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
             workflowSteps[WorkflowStatus.SecondVotingSessionEnded] = "Second voting session ended";
             workflowSteps[WorkflowStatus.SecondRoundVotesTallied] = "Second round votes tallied";
             workflowSteps[WorkflowStatus.VotesClosed] = "Votes closed";
-
-        voters[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4] = Voter(true,false,0,address(0),false,0,1);
-        numberOfVoters++;
-        votersAddress[numberOfVoters] = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
-        voters[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2] = Voter(true,false,0,address(0),false,0,1);
-        numberOfVoters++;
-        votersAddress[numberOfVoters] = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;
-        voters[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db] = Voter(true,false,0,address(0),false,0,1);
-        numberOfVoters++;
-        votersAddress[numberOfVoters] = 0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db;
-
-        workflowStep = 1;
-
       }
 
     enum WorkflowStatus {
