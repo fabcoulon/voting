@@ -19,91 +19,18 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
     event secondRoundVoted (address voter, uint proposalId);
     event delegated(address from,address to);
 
-      constructor() {
-            workflowSteps[WorkflowStatus.RegisteringVoters] = "Registering voters";
-            workflowSteps[WorkflowStatus.ProposalsRegistrationStarted] = "Proposals registration started";
-            workflowSteps[WorkflowStatus.ProposalsRegistrationEnded] = "proposals registration ended";
-            workflowSteps[WorkflowStatus.VotingSessionStarted] = "Voting session started";
-            workflowSteps[WorkflowStatus.VotingSessionEnded] = "Voting session ended";
-            workflowSteps[WorkflowStatus.VotesTallied] = "Votes tallied";
-            workflowSteps[WorkflowStatus.SecondVotingSessionStarted] = "Second voting session started";
-            workflowSteps[WorkflowStatus.SecondVotingSessionEnded] = "Second voting session ended";
-            workflowSteps[WorkflowStatus.SecondRoundVotesTallied] = "Second round votes tallied";
-            workflowSteps[WorkflowStatus.VotesClosed] = "Votes closed";
-<<<<<<< HEAD
-=======
-
-        voters[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4] = Voter(true,false,0,address(0),false,0,1);
-        numberOfVoters++;
-        votersAddress[numberOfVoters] = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
-        voters[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2] = Voter(true,false,0,address(0),false,0,1);
-        numberOfVoters++;
-        votersAddress[numberOfVoters] = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;
-        voters[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db] = Voter(true,false,0,address(0),false,0,1);
-        numberOfVoters++;
-        votersAddress[numberOfVoters] = 0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db;
-
-        // proposals[1].proposalId = 1;
-        // proposals[1].description = "proposition 1";
-        // proposals[2].proposalId = 2;
-        // proposals[2].description = "proposition 2";
-        // proposals[3].proposalId = 3;
-        // proposals[3].description = "proposition 3";
-        // proposals[4].proposalId = 4;
-        // proposals[4].description = "proposition 4";
-        // proposals[5].proposalId = 5;
-        // proposals[5].description = "proposition 5";
-        // proposalId = 5;
-
-        // voters[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4].hasVoted = true;
-        // voters[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4].votedProposalId = 1;
-        // voters[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4].weight--;
-        // votes.push(1);
-        // proposals[1].voteCount++;
-
-        // voters[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2].hasVoted = true;
-        // voters[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2].votedProposalId = 1;
-        // voters[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2].weight--;
-        // proposals[1].voteCount++;
-
-        // voters[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db].hasVoted = true;
-        // voters[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db].votedProposalId = 2;
-        // voters[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db].weight--;
-        // votes.push(2);
-        // proposals[2].voteCount++;
-
-        // second round
-
-        // secondRoundProposals[1].proposalId = 1;
-        // secondRoundProposals[1].description = "proposition 1";
-        // secondRoundProposals[2].proposalId = 2;
-        // secondRoundProposals[2].description = "proposition 2";
-
-        // voters[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4].weight++;
-        // voters[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2].weight++;
-        // voters[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db].weight++;
-
-        // voters[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4].hasSecondRoundVoted = true;
-        // voters[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4].secondRoundProposalId = 1;
-        // voters[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4].weight--;
-        // secondRoundvotes.push(1);
-        // secondRoundProposals[1].voteCount++;
-
-        // voters[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2].hasSecondRoundVoted = true;
-        // voters[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2].secondRoundProposalId = 1;
-        // voters[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2].weight--;
-        // secondRoundProposals[1].voteCount++;
-
-        // voters[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db].hasSecondRoundVoted = true;
-        // voters[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db].secondRoundProposalId = 2;
-        // voters[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db].weight--;
-        // secondRoundvotes.push(2);
-        // secondRoundProposals[2].voteCount++;
-
-        workflowStep = 1;
-
->>>>>>> parent of 58044d3 (Bugs fix)
-      }
+    constructor() {
+        workflowSteps[WorkflowStatus.RegisteringVoters] = "Registering voters";
+        workflowSteps[WorkflowStatus.ProposalsRegistrationStarted] = "Proposals registration started";
+        workflowSteps[WorkflowStatus.ProposalsRegistrationEnded] = "proposals registration ended";
+        workflowSteps[WorkflowStatus.VotingSessionStarted] = "Voting session started";
+        workflowSteps[WorkflowStatus.VotingSessionEnded] = "Voting session ended";
+        workflowSteps[WorkflowStatus.VotesTallied] = "Votes tallied";
+        workflowSteps[WorkflowStatus.SecondVotingSessionStarted] = "Second voting session started";
+        workflowSteps[WorkflowStatus.SecondVotingSessionEnded] = "Second voting session ended";
+        workflowSteps[WorkflowStatus.SecondRoundVotesTallied] = "Second round votes tallied";
+        workflowSteps[WorkflowStatus.VotesClosed] = "Votes closed";
+    }
 
     enum WorkflowStatus {
     RegisteringVoters,
@@ -158,25 +85,19 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
     }
 
     function changeWorkflowStatus() external onlyOwner{
-        if(proposalId < 1 && WorkflowSteps[workflowStep] == WorkflowStatus.ProposalsRegistrationStarted)
-        {
-            revert("No proposals");
-        }
-        else if(votes.length < 1 && WorkflowSteps[workflowStep] == WorkflowStatus.VotingSessionStarted)
-        {
-            revert("No voters");
-        }
-        else if(secondRoundvotes.length < 1 && WorkflowSteps[workflowStep] == WorkflowStatus.SecondVotingSessionStarted)
-        {
-            revert("No voters");
-        }
-        else if(winningProposalsId.length < 1 && WorkflowSteps[workflowStep] == WorkflowStatus.VotesTallied)
-        {
-            revert("No one elected");
-        }
         require(WorkflowSteps[workflowStep] < WorkflowStatus.VotesClosed, "Last step");
         require(numberOfVoters > 1,"Quorum not reached");
         emit WorkflowStatusChange(WorkflowSteps[workflowStep],WorkflowSteps[workflowStep+1]);
+
+        bool hasProposals = proposalId > 0 && WorkflowSteps[workflowStep] == WorkflowStatus.ProposalsRegistrationStarted;
+        bool hasVoters = votes.length > 0 && WorkflowSteps[workflowStep] == WorkflowStatus.VotingSessionStarted;
+        bool hasSecondRoundVoters = secondRoundvotes.length > 0 && WorkflowSteps[workflowStep] == WorkflowStatus.SecondVotingSessionStarted;
+        bool isElected = winningProposalsId.length > 0 && WorkflowSteps[workflowStep] == WorkflowStatus.VotesTallied;
+        
+        if(!hasProposals)  revert("No proposals");
+        else if(!hasVoters) revert("No voters");
+        else if(!hasSecondRoundVoters) revert("No voters");
+        else if(!isElected) revert("No one elected");
         workflowStep++;
     }
 
