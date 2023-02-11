@@ -4,15 +4,18 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
 
   contract Voting is Ownable {
 
-    uint private workflowStep;
+    uint private workflowStatus;
     uint public proposalId;
     uint public voterId;
     uint public winningProposalId;
     uint public votes;
     uint public secondRoundVotes;
     uint[] public winningProposalsId;
+    uint mostVotedProposal;
+    bool isDraw;
+    uint frequenceOfMax;
 
-    event VoterRegistered(address voterAddress); 
+    event VoterRegistered(address voterAddress);
     event WorkflowStatusChange(WorkflowStatus previousStatus, WorkflowStatus newStatus);
     event ProposalRegistered(uint proposalId);
     event Voted (address voter, uint proposalId);
@@ -76,27 +79,28 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
     mapping(uint => address) public votersAddress; // Used to reload weight;
     mapping(uint => Proposal) public proposals;
     mapping(uint => Proposal) public secondRoundProposals;
-    mapping(WorkflowStatus => string) private workflowSteps;
+    mapping(WorkflowStatus => string) private workflowSteps; // for getter function workFlowStep()
 
     modifier contractNotClosed(){
-	require(workflowStep < uint(WorkflowStatus.VotesClosed), "contract closed");
+	require(workflowStatus < uint(WorkflowStatus.VotesClosed), "contract closed");
     _;
     }
 
     function changeWorkflowStatus() external onlyOwner{
-        require(WorkflowSteps[workflowStep] < WorkflowStatus.VotesClosed, "Last step");
+        require(workflowStatus < uint(WorkflowStatus.VotesClosed), "Last step");
         require(voterId > 1,"Quorum not reached");
-        emit WorkflowStatusChange(WorkflowSteps[workflowStep],WorkflowSteps[workflowStep+1]);
         
-        if(proposalId < 1 && WorkflowSteps[workflowStep] == WorkflowStatus.ProposalsRegistrationStarted){ revert("No proposals");}
-        else if(votes < 1 && WorkflowSteps[workflowStep] == WorkflowStatus.VotingSessionStarted){ revert("No voters");}
-        else if(secondRoundVotes < 1 && WorkflowSteps[workflowStep] == WorkflowStatus.SecondVotingSessionStarted){ revert("No voters");}
-        else if(winningProposalsId.length < 1 && WorkflowSteps[workflowStep] == WorkflowStatus.VotesTallied){ revert("No one elected");}
-        workflowStep++;
+        if(proposalId < 1 && workflowStatus == uint(WorkflowStatus.ProposalsRegistrationStarted)){ revert("No proposals");}
+        else if(votes < 1 && workflowStatus == uint(WorkflowStatus.VotingSessionStarted)){ revert("No voters");}
+        else if(secondRoundVotes < 1 && workflowStatus == uint(WorkflowStatus.SecondVotingSessionStarted)){ revert("No voters");}
+        else if(winningProposalsId.length < 1 && workflowStatus == uint(WorkflowStatus.VotesTallied)){ revert("No one elected");}
+        workflowStatus++;
+
+        emit WorkflowStatusChange(WorkflowSteps[workflowStatus],WorkflowSteps[workflowStatus+1]);
     }
 
     function registerVoter(address _address) external onlyOwner contractNotClosed {
-        require(WorkflowSteps[workflowStep] == WorkflowStatus.RegisteringVoters, "Not registration time !");
+        require(workflowStatus == uint(WorkflowStatus.RegisteringVoters), "Not registration time !");
         require(!voters[_address].isRegistered, "Already added !");
         require(_address != address(0), "Incorrect address");
 
@@ -108,79 +112,43 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
     }
 
     function ProposalRegistration(string calldata _proposal) external contractNotClosed{
-        require(WorkflowSteps[workflowStep] == WorkflowStatus.ProposalsRegistrationStarted, "Not proposal registration time !");
+        require(workflowStatus == uint(WorkflowStatus.ProposalsRegistrationStarted), "Not proposal registration time !");
         require(voters[msg.sender].isRegistered, "Not registrated !");
         require(bytes(_proposal).length > 0,"Not empty message");
 
-        // set proposal id and description
-        proposals[proposalId].description = _proposal;
         proposalId++;
-
+        proposals[proposalId].description = _proposal;
         emit ProposalRegistered(proposalId);
     }
 
     function Vote(uint _proposalSelectedId) external contractNotClosed{
-        bool VotingSessionStarted = WorkflowSteps[workflowStep] == WorkflowStatus.VotingSessionStarted;
-        bool SecondVotingSessionStarted = WorkflowSteps[workflowStep] == WorkflowStatus.SecondVotingSessionStarted;
+        bool VotingSessionStarted = workflowStatus == uint(WorkflowStatus.VotingSessionStarted);
+        bool SecondVotingSessionStarted = workflowStatus == uint(WorkflowStatus.SecondVotingSessionStarted);
 
         require(VotingSessionStarted || SecondVotingSessionStarted, "Not voting time !");
         require(_proposalSelectedId != 0 && _proposalSelectedId <= proposalId, "Proposal not exists");
         require(voters[msg.sender].isRegistered, "Not registrated !");
 
         if(VotingSessionStarted) {
-            require(!voters[msg.sender].hasVoted, "Already voted");
-            voteAtStep(_proposalSelectedId,proposals,true);
-            votes++;
+            voteAtFirstStep(_proposalSelectedId);
         }
         else if(SecondVotingSessionStarted) {
-            require(!voters[msg.sender].hasSecondRoundVoted, "Already voted");
-            voteAtStep(_proposalSelectedId,secondRoundProposals,false);
-            secondRoundVotes++;
+            voteAtSecondStep(_proposalSelectedId);
         }
-    }
+    } 
 
     function getWinner() external {
-        bool VotesTallied = WorkflowSteps[workflowStep] == WorkflowStatus.VotesTallied;
-        bool SecondRoundVotesTallied = WorkflowSteps[workflowStep] == WorkflowStatus.SecondRoundVotesTallied;
+        bool VotesTallied = workflowStatus == uint(WorkflowStatus.VotesTallied);
+        bool SecondRoundVotesTallied = workflowStatus == uint(WorkflowStatus.SecondRoundVotesTallied);
 
         require(VotesTallied || SecondRoundVotesTallied, "Closing steps !");
 
-        uint mostVotedProposal;
-        bool isDraw;
-        uint frequenceOfMax;
-
         if(VotesTallied)
         {       
-            mostVotedProposal = getMostVotedProposal(proposals);
-            frequenceOfMax = checkDraw(mostVotedProposal, proposals);
-            isDraw = frequenceOfMax > 1;            
-            
-            if(!isDraw){
-                // No second round
-                winningProposalId = winningProposalsId[0];
-                workflowStep = uint(WorkflowStatus.VotesClosed);
-            }
-            else{
-                 // second round
-                workflowStep++;
-                mostVotedProposal = 0;
-                proposalId = frequenceOfMax;
-                // Give weight to voters for the second round
-                for(uint i = 0; i <voterId+1;i++){
-                    voters[votersAddress[i]].weight = 1;
-                }
-            }  
+            getWinnerOfFirstVote();
         }
         else if(SecondRoundVotesTallied) {
-
-            mostVotedProposal = getMostVotedProposal(secondRoundProposals);
-            // If draw after second round. No winners
-            frequenceOfMax = checkDraw(mostVotedProposal, secondRoundProposals);
-            isDraw = frequenceOfMax > 1; 
-            if(!isDraw){
-                 winningProposalId = winningProposalsId[0];
-            }
-            workflowStep = uint(WorkflowStatus.VotesClosed);    
+            getWinnerOfSecondVote();
         }
     }
 
@@ -188,8 +156,8 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
         require(voters[_to].isRegistered, "Not registrated !");
         require(_to != msg.sender,"No self delegation");
 
-        bool underSecondVotingSessionStarted = WorkflowSteps[workflowStep] < WorkflowStatus.SecondVotingSessionStarted;
-        bool overSecondVotingSessionStarted = WorkflowSteps[workflowStep] >= WorkflowStatus.SecondVotingSessionStarted;
+        bool underSecondVotingSessionStarted = workflowStatus < uint(WorkflowStatus.SecondVotingSessionStarted);
+        bool overSecondVotingSessionStarted = workflowStatus >= uint(WorkflowStatus.SecondVotingSessionStarted);
         
         Voter storage sender = voters[msg.sender];
         Voter storage delegateVoter = voters[_to];
@@ -201,36 +169,87 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
             _to = voters[_to].delegate;
             require(_to != msg.sender);
         }
-        sender.delegate = _to;
 
+        sender.delegate = _to;
         delegateVoter.weight ++;
 
-        if(underSecondVotingSessionStarted)
-            {
-            sender.hasVoted = true;
-            if (delegateVoter.hasVoted) {
-                delegateVoter.hasVoted = false;
-                sender.votedProposalId = delegateVoter.votedProposalId;
-            } else {
-                sender.votedProposalId = 1;
-            }
-        }
-        else if(overSecondVotingSessionStarted)
-        {
-             sender.hasVoted = true;
-            if (delegateVoter.hasSecondRoundVoted) {
-                delegateVoter.hasSecondRoundVoted = false;
-                sender.secondRoundProposalId = delegateVoter.secondRoundProposalId;
-            } else {
-                sender.secondRoundProposalId = 1;
-            }
-        }
+        if(underSecondVotingSessionStarted){firstRoundDelegate(sender,delegateVoter);}
+        else if(overSecondVotingSessionStarted){secondRoundDelegate(sender,delegateVoter);}
+
         sender.weight--;
         emit delegated(msg.sender,_to); 
     }
 
-    function getMostVotedProposal(mapping(uint => Proposal) storage _proposals) private view returns (uint){
-        uint mostVotedProposal = 0;
+    function voteAtFirstStep(uint _proposalSelectedId) private{
+        require(!voters[msg.sender].hasVoted, "Already voted");
+
+        // In case of delegation
+        if(voters[msg.sender].weight == 1)
+        {      
+            voters[msg.sender].hasVoted = true;
+        }    
+
+        voters[msg.sender].votedProposalId = _proposalSelectedId;     
+        voters[msg.sender].weight--;           
+        proposals[_proposalSelectedId].voteCount++;
+        votes++;
+
+        emit Voted (msg.sender, _proposalSelectedId);       
+    }
+
+    function voteAtSecondStep(uint _proposalSelectedId) private{
+        require(!voters[msg.sender].hasSecondRoundVoted, "Already voted");
+
+        // In case of delegation
+        if(voters[msg.sender].weight == 1)
+        {      
+            voters[msg.sender].hasSecondRoundVoted = true;
+        }
+        
+        voters[msg.sender].secondRoundProposalId = _proposalSelectedId;   
+        voters[msg.sender].weight--;          
+        secondRoundProposals[_proposalSelectedId].voteCount++;
+        secondRoundVotes++;
+
+        emit secondRoundVoted (msg.sender, _proposalSelectedId);
+    } 
+
+    function getWinnerOfFirstVote() private{
+
+        mostVotedProposal = getMostVotedProposal(proposals);
+        frequenceOfMax = checkDraw(proposals);
+        isDraw = frequenceOfMax > 1;            
+        
+        if(!isDraw){
+            // No second round
+            winningProposalId = winningProposalsId[0];
+            workflowStatus = uint(WorkflowStatus.VotesClosed);
+        }
+        else{
+            // second round
+            workflowStatus++;
+            mostVotedProposal = 0;
+            proposalId = frequenceOfMax;
+            // Give weight to voters for the second round
+            for(uint i = 0; i <voterId;i++){
+                voters[votersAddress[i]].weight = 1;
+            }
+        }  
+    }
+
+    function getWinnerOfSecondVote() private{
+        mostVotedProposal = getMostVotedProposal(secondRoundProposals);
+        // If draw after second round. No winners
+        frequenceOfMax = checkDraw(secondRoundProposals);
+        isDraw = frequenceOfMax > 1; 
+        if(!isDraw){
+            winningProposalId = winningProposalsId[0];
+        }
+        workflowStatus = uint(WorkflowStatus.VotesClosed);    
+    }
+
+        function getMostVotedProposal(mapping(uint => Proposal) storage _proposals) private returns (uint){
+        mostVotedProposal = 0;
 
          for (uint i = 0; i <voterId; i++) {
                 if(_proposals[i].voteCount > mostVotedProposal)
@@ -241,44 +260,44 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
         return mostVotedProposal;
     }
 
-    function checkDraw(uint _mostVotedProposal, mapping(uint => Proposal) storage _proposals) private returns(uint){
-        uint256 frequenceOfMax = 0;
+    function checkDraw(mapping(uint => Proposal) storage _proposals) private returns(uint){
+        frequenceOfMax = 0;
 
         delete winningProposalsId; 
 
-        for (uint i = 0; i < voterId; i++) {
-
-            if (_proposals[i].voteCount == _mostVotedProposal) {
+        uint j = 0; //id of the secondRoundProposals
+        for (uint i = 0; i < proposalId+1; i++) {
+            if (_proposals[i].voteCount == mostVotedProposal) {
+            j++;
             frequenceOfMax ++;
-            secondRoundProposals[i].description = _proposals[i].description;
+            secondRoundProposals[j].description = _proposals[i].description;
             winningProposalsId.push(i);
-            } 
+            }
         }
         return frequenceOfMax;
     }
 
-    function voteAtStep(uint _proposalSelectedId, mapping(uint => Proposal) storage _proposals, bool firstRound) private {
-
-        // In case of delegation
-        if(voters[msg.sender].weight == 1)
-        {      
-            firstRound
-            ?       voters[msg.sender].hasVoted = true
-            :       voters[msg.sender].hasSecondRoundVoted = true;
+    function firstRoundDelegate(Voter storage _sender, Voter storage _delegateVoter) private {
+        _sender.hasVoted = true;
+        if (_delegateVoter.hasVoted) {
+            _delegateVoter.hasVoted = false;
+            _sender.votedProposalId = _delegateVoter.votedProposalId;
+        } else {
+            _sender.votedProposalId = 1;
         }
-        
-         firstRound
-            ?       voters[msg.sender].votedProposalId = _proposalSelectedId
-            :       voters[msg.sender].secondRoundProposalId = _proposalSelectedId;
-      
-        voters[msg.sender].weight--;
-            
-        _proposals[_proposalSelectedId].voteCount++;
+    }
 
-        if(firstRound) { emit Voted (msg.sender, _proposalSelectedId); } else { emit secondRoundVoted (msg.sender, _proposalSelectedId); } 
+    function secondRoundDelegate(Voter storage _sender, Voter storage _delegateVoter) private{
+          _sender.hasVoted = true;
+            if (_delegateVoter.hasSecondRoundVoted) {
+                _delegateVoter.hasSecondRoundVoted = false;
+                _sender.secondRoundProposalId = _delegateVoter.secondRoundProposalId;
+            } else {
+                _sender.secondRoundProposalId = 1;
+            }
     }
 
     function workFlowStep() external view returns (string memory) {
-        return workflowSteps[WorkflowSteps[workflowStep]];
+        return workflowSteps[WorkflowSteps[workflowStatus]];
     }
 }
