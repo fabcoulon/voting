@@ -90,10 +90,10 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/
         require(workflowStatus < uint(WorkflowStatus.VotesClosed), "Last step");
         require(voterId > 1,"Quorum not reached");
         
-        if(proposalId < 1 && workflowStatus == uint(WorkflowStatus.ProposalsRegistrationStarted)){ revert("No proposals");}
-        else if(votes < 1 && workflowStatus == uint(WorkflowStatus.VotingSessionStarted)){ revert("No voters");}
-        else if(secondRoundVotes < 1 && workflowStatus == uint(WorkflowStatus.SecondVotingSessionStarted)){ revert("No voters");}
-        else if(winningProposalsId.length < 1 && workflowStatus == uint(WorkflowStatus.VotesTallied)){ revert("No one elected");}
+        if(proposalId == 0 && workflowStatus == uint(WorkflowStatus.ProposalsRegistrationStarted)){ revert("No proposals");}
+        else if(votes == 0 && workflowStatus == uint(WorkflowStatus.VotingSessionStarted)){ revert("No voters");}
+        else if(secondRoundVotes == 0 && workflowStatus == uint(WorkflowStatus.SecondVotingSessionStarted)){ revert("No voters");}
+        else if(winningProposalsId.length == 0 && workflowStatus == uint(WorkflowStatus.VotesTallied)){ revert("No one elected");}
         workflowStatus++;
 
         emit WorkflowStatusChange(WorkflowSteps[workflowStatus],WorkflowSteps[workflowStatus+1]);
